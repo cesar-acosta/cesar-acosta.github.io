@@ -1,0 +1,275 @@
+---
+title: "Auto dataset"
+output: pdf_document
+---
+
+#```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+#```
+
+```{r}
+# auto.r
+
+library(car)    # Boxplot() function
+library(ISLR)   # dataset
+
+d1=Auto
+#
+str(d1)
+nrow(d1)
+n = nrow(d1)
+#
+# remove last col
+#
+d2 = d1[,-9]               
+#
+# summary of all columns
+#
+summary(d2)
+#
+# cylinders, year, and origin as factors
+#
+d3 = d2
+d3$cylinders = as.factor(d3$cylinders)
+d3$year = as.factor(d3$year)
+d3$origin = as.factor(d3$origin)
+summary(d3)
+#
+# mpg by origin
+#
+plot(mpg~origin,d3)        # same as
+boxplot(mpg~origin,d3)
+#
+# to list outliers
+#
+Boxplot(mpg~origin,d3)     # library(car) required
+a=Boxplot(mpg~origin,d3)   # save outliers in object a 
+d3[a,]
+#
+# mpg stats
+#
+summary(d2$mpg)
+#
+# selected stats
+#
+# find means
+#
+apply(d2,2,mean)
+#
+# Scatterplot - mpg vs cylinders
+#
+# plot(cylinders, mpg)        # gives Error 
+plot(d2$cylinders, d2$mpg)  
+#
+# boxplot - mpg by cylinders
+#
+# get boxplot when cylinders is factor
+#
+d2$cylinders=factor(d2$cylinders)
+summary(d2$cylinders)
+plot(mpg~cylinders,d2)      
+#
+# histogram
+#
+# absolute freqs
+#
+mpg = d2$mpg
+hist(mpg)
+#
+# hist details
+#
+h1 = hist(mpg)
+str(h1)
+class(h1)
+#
+# frequency table
+#
+breaks = h1$breaks
+m = length(breaks)
+rbounds = breaks[-1]
+lbounds = breaks[-m]
+breaks
+rbounds
+lbounds
+df4 = data.frame(from = lbounds,to=rbounds,
+                 midpoint = h1$mids,
+                 abs.frequency = h1$counts)
+print(df4,row.names = F)
+#
+h1$counts
+#
+# area under this histogram is 5.0
+#
+# hist of relative freqs
+#
+hist(mpg,freq=F)  
+#
+# not relative freqs since leftbar height should be 66/392 = 0.168
+#
+h1$breaks         
+#
+# when bars width is not equal to 1 freq=F does not give relative freqs
+#
+# adjustment
+#
+h1$counts = h1$counts/n
+h1$counts
+#
+plot(h1)
+#
+h1$counts/5
+h1$density 
+#
+# change axes limits
+#
+plot(h1,xlim=c(0,60),ylim=c(0,0.25))
+#
+# add normal density curve with area 5.0
+#
+width1 = h1$breaks[2]-h1$breaks[1]
+mu = mean(mpg)
+stdev = sd(mpg)
+plot(h1,xlim=c(0,60),ylim=c(0,0.3),main="")
+abline(v=mu,lty=2,col="red")
+curve(dnorm(x,mu,stdev)*width1,col="red",add=T)
+grid()
+#
+# skewness and kurtosis
+#
+library(e1071)       # skewness() excess kurtosis()
+skewness(mpg)
+kurtosis(mpg)  
+#
+# find area under a curve f(x)
+#
+f = function(x) dnorm(x,mu,stdev)*width1
+integrate(f,0,55)
+#
+# or use
+# install.packages("HistogramTools")
+library(HistogramTools)
+PlotRelativeFrequency(hist(mpg))
+
+# scatterplot       plot(d2$weight,d2$horsepower)
+#
+# or using formula syntax
+#
+plot(horsepower~weight,d2)
+#
+# change point character
+plot(horsepower~weight,d2,pch=19,cex=0.75)
+grid()
+#
+# dots colored by "origin" categories
+#
+library(car)
+unique(d2$origin)      
+plot(horsepower~weight,d2,pch=19,cex=0.75,col=origin)
+grid()
+#
+# legend
+#
+label = c("American","European","Japanese")
+color = c(1,2,3)
+char = c(19,19,19)
+legend("bottomright",label,pch=char,cex=0.8,col=color)
+# or
+# legend(1500,240,label,pch=char,cex=0.6,col=color) 
+#
+# add regression line
+#
+plot(horsepower~weight,d2,pch=19,cex=0.75)
+#
+# linear model
+#
+m1=lm(horsepower~weight,d2)
+coefficients(m1)
+#
+abline(m1)
+abline(m1,col="red")
+abline(m1,col="red",lwd=2)
+grid()
+#
+# locator
+#
+#identify(d2$weight,d2$horsepower,rownames(d2),cex=0.5)  # rownames is default id
+#identify(d2$weight,d2$horsepower,d2$horsepower,cex=0.5)
+#
+d2[14,]
+#
+# label all points (label is rownumber)
+#
+text(horsepower~weight,data=d2,
+     labels=rownames(d2),pos=1,offset=0.25,
+     cex=0.5)
+#
+# predict horsepower of a 3000-pound car
+#
+head(d2,3)
+#
+newval = data.frame(weight=3000)
+newval
+predict(m1,newval)
+#
+# largest outlier
+#
+res=resid(m1)
+idx=which(res==max(res))
+d1[idx,]
+#
+# car in row 14 is largest outlier 
+# (the farthest from fitted line)
+#
+# just label largest outlier
+#
+label = rep("",392)
+res   = resid(m1)
+idx   = which(res==max(res))
+label[idx]=idx
+text(horsepower~weight,d2,labels=label,pos=1,offset=0.5,cex=0.6,col=2)
+#
+# pairs function
+#
+pairs(d2)
+# 
+# selected cols
+#
+pairs(~ mpg + displacement + horsepower + weight + acceleration,d2,
+      pch=19,cex=0.5)
+# color by origin
+#
+pairs(~ mpg + displacement + horsepower + weight + acceleration,d2,
+      pch=19,cex=0.5,col=d1$origin)
+
+# load panel.hist() function
+d3=d2[,-c(2,7:9)]
+head(d3)
+
+# with histograms 
+#
+# install.packages("BioStatR")
+library("BioStatR")
+#
+pairs(d3,panel = panel.smooth,cex = 0.6,pch = 19,
+      diag.panel = panel.hist,cex.labels = 0.8,font.labels = 1)
+
+# or 
+#
+library(car)
+scatterplotMatrix(~ mpg + displacement + horsepower + weight + acceleration,d2,
+                  pch=19,cex=0.5,col="black")
+#
+scatterplotMatrix(~ mpg + displacement + horsepower + weight + acceleration,d2,
+                  pch=19,cex=0.5,col="black",
+                  diagonal=list(method ="histogram", breaks="FD"))
+#
+# see details in   https://rdrr.io/cran/car/man/scatterplotMatrix.html
+#
+# covariance and correlation matrix
+#
+d3=d2[,-c(2,7,8)]
+cov(d3)
+cor(d3)
+#
+
+```

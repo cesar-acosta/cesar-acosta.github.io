@@ -1,0 +1,301 @@
+---
+title: 'Cars93 Dataset'
+author: 'Cesar Acosta'
+output: pdf_document
+---
+
+```{r}
+## ---------------------------------------------------------------------------------------------
+library(MASS)
+library(help=MASS)        # functions and datasets in MASS - also go online
+
+d1=Cars93
+str(d1)
+dim(d1)
+n = nrow(d1)
+n
+head(d1)
+# 
+# select numeric columns 
+#
+dnum = d1[,sapply(d1, is.numeric)]
+str(dnum)
+#
+# select factor columns 
+#
+dfactors = d1[,sapply(d1, is.factor)]
+str(dfactors)
+# 
+# find levels of factor columns
+#
+sapply(dfactors,levels)
+#
+## ---------------------------------------------------------------------------------------------
+# find rows with NAs
+#
+totals = rowSums(is.na(d1))
+totals[totals>0]
+
+d2 = d1[totals > 0,]
+rownames(d2) 
+#
+# find rows excluding NAs
+#
+index = as.integer(rownames(d2))  
+index
+#
+d3 = d1[-index,]
+dim(d3)
+#
+totals2 = rowSums(is.na(d3))
+totals2[totals2>0]
+#
+
+
+## ---------------------------------------------------------------------------------------------
+set.seed(1) 
+#
+# Choose 4 cars at random
+#
+idx = sample(n,4)         
+idx
+
+d1[idx,1:8]
+
+
+## ---------------------------------------------------------------------------------------------
+# select cols by name
+#
+d2 = d1[c("Model","Price","AirBags")]
+head(d2)
+#
+# select cols by column number
+d2 = d1[c(2,5,9)]
+head(d2)
+#
+# select 10th row
+#
+d1[10,]
+#
+# select rows and cols
+#
+d2 = d1[c(1:3),c("Model","Price","AirBags")]
+d2
+
+d2 = d1[c(1:3),c(2,4,9)]
+d2
+#
+# Using $ operator
+#
+d2 = data.frame(d1$Manufacturer,d1$Price)
+head(d2)
+#
+# subset function
+#
+d2 = subset(d1,select=c(Manufacturer,Price))    # must use select explicitly
+head(d2)
+#
+# Ford cars -all cols
+#
+d2 = subset(d1,subset = Manufacturer=="Ford")
+head(d2)
+#
+# Ford cars -Price col only
+#
+d2 = subset(d1,Price,subset = Manufacturer=="Ford")
+d2
+#
+# Ford cars -Manufacturer and Price cols only
+#
+d2 = subset(d1,c(Manufacturer,Price),subset = Manufacturer=="Ford")
+d2
+#
+# select Ford and Nissan cars (all columns)
+#
+d2 = subset(d1,subset=Manufacturer=="Ford"|Manufacturer=="Nissan")
+dim(d2)
+#
+# select Ford and Nissan cars (two columns only)
+#
+d2 = subset(d1,c(Manufacturer,Price),subset=Manufacturer=="Ford"|Manufacturer=="Nissan")
+d2
+
+#
+# Name and Price of cars weighting > 4000
+#
+d2 = d1[d1$Weight>4000,c(1:3,5)]   # there are 4
+d2
+#
+# most expensive car
+#
+d1[d1$Price == max(d1$Price),1:3]
+
+
+## ---------------------------------------------------------------------------------------------
+# how many exceeding 3000 lbs?
+#
+aux = d1$Weight
+cars1=aux[aux>3000]
+length(cars1)
+
+
+## ---------------------------------------------------------------------------------------------
+d2 = subset(d1,select=c(Manufacturer,Type,Price,DriveTrain,Weight))  
+summary(d2)
+
+
+## ---------------------------------------------------------------------------------------------
+# identify categories (factor levels) of DriveTrain
+#
+levels(d1$DriveTrain)
+#
+# number of cars by DriveTrain
+#
+table(d1$DriveTrain)
+summary(d1$DriveTrain)
+#
+# fraction of cars by DriveTrain
+#
+prop.table(table(d1$DriveTrain))
+#
+# number of cars by AirBags & DriveTrain
+#
+table(d1$AirBags,d1$DriveTrain)
+#
+t1 = table(d1$AirBags,d1$DriveTrain)
+# add column with row totals
+addmargins(t1,margin=2)
+# add both row and col totals
+addmargins(t1)
+#
+#
+# proportion of cars by AirBags & DriveTrain
+#
+t1 = table(d1$AirBags,d1$DriveTrain)
+prop.table(t1)
+#
+# proportion over rows
+prop.table(t1,margin=1)
+# proportion over cols
+prop.table(t1,margin=2)
+#
+# or long-table format (naming the cols is important)
+#
+a = table(AirBags = d1$AirBags,DriveTrain=d1$DriveTrain)
+data.frame(a)
+#
+# for many categorical cols convert to a dataframe (long-table format)
+#
+table(d1$AirBags,d1$DriveTrain,d1$Origin)
+#
+a = table(AirBags = d1$AirBags,DriveTrain=d1$DriveTrain,Origin = d1$Origin)
+data.frame(a)
+#
+# number of cars by AirBags & DriveTrain & Passengers
+#
+ftable(d1$AirBags,d1$DriveTrain,d1$Passengers)
+# 
+#
+# xtabs works with formula
+xtabs(~Passengers+AirBags,d1)
+#
+t2 = xtabs(~Passengers+AirBags,d1)
+#
+# convert to a dataframe
+d2 = data.frame(t2)
+d2
+#
+# or just add totals
+addmargins(t2)
+## ---------------------------------------------------------------------------------------------
+# median weight per DriveTrain
+tapply(d1$Weight,d1$DriveTrain,median)
+#
+# sorted
+#
+aux1 = tapply(d1$Weight,d1$DriveTrain,median)
+sort1=aux1[order(aux1)]   
+sort1
+#
+# relative freq
+#
+rel1=prop.table(aux1)
+rel1
+#
+# median weight by AirBags & DriveTrain
+#
+aux = list(d1$AirBags,d1$DriveTrain)
+tapply(d1$Weight,aux,median)  # factors in a list()
+#
+# change NA to 0
+#
+m1=tapply(d1$Weight,aux,median)
+m1[is.na(m1)]=0
+m1
+#
+# Median of many numeric cols by DriveTrain
+#
+aggregate( cbind(Price,Weight,Length) ~ DriveTrain,data=d1,mean,na.rm = TRUE)
+
+# Median of many numeric cols by AirBags & DriveTrain
+#
+aggregate( cbind(Price,Weight,Length) ~ AirBags + DriveTrain,data=d1,mean,na.rm = TRUE)
+#
+# compare with
+#
+aux1 = aggregate( cbind(Price,Weight,Length) ~ AirBags,data=d1,mean,na.rm = TRUE)
+aux2 = aggregate( cbind(Price,Weight,Length) ~ DriveTrain,data=d1,mean,na.rm = TRUE)
+aux1
+aux2
+#
+## ---------------------------------------------------------------------------------------------
+d4 = subset(d1,select=c(AirBags,DriveTrain,Origin,Price,Weight,Width))
+str(d4)
+# 
+# select numeric columns 
+#
+dnum = d4[,sapply(d4, is.numeric)]
+str(dnum)
+#
+# select factor columns 
+#
+dfactors = d4[,sapply(d4, is.factor)]
+str(dfactors)
+# 
+# find levels of all factor columns
+#
+sapply(dfactors,levels)
+#
+# count rows by levels of all factor columns
+#
+summary(dfactors)
+#
+## ---------------------------------------------------------------------------------------------
+d2 = subset(d1,select=c(Manufacturer,Price,Weight,Width))  
+head(d2)
+#
+# sort by Width
+#
+d3 = d2[order(d2$Width),]
+head(d3)
+#
+# sort DECREASING by Width
+#
+d3 = d2[order(d2$Width,decreasing = T),]
+head(d3)
+#
+# sort by Width and break ties by Weight
+#
+d3 = d2[order(d2$Width,d2$Weight),]
+head(d3)
+#
+# MIXED SORTING
+# sort decreasing by Width and increasing by Weight
+#
+d3 = d2[order(-xtfrm(d2$Width),xtfrm(d2$Weight)),]
+head(d3)
+
+
+
+```
+
